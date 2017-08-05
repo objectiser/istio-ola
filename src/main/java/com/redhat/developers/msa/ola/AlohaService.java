@@ -3,7 +3,7 @@
  * Copyright 2016, Red Hat, Inc. and/or its affiliates, and individual
  * contributors by the @authors tag. See the copyright.txt in the
  * distribution for a full listing of individual contributors.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,16 @@
  */
 package com.redhat.developers.msa.ola;
 
+import feign.HeaderMap;
 import feign.Headers;
+import feign.Param;
 import feign.RequestLine;
 
 import java.util.List;
 
-public interface HolaService {
+public interface AlohaService {
 
-	@RequestLine("GET /api/hola-chaining")
-	public List<String> hola();
+    @RequestLine("GET /api/aloha-chaining")
+    public List<String> aloha();
 
 }

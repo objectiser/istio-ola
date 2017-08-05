@@ -17,11 +17,14 @@
 package com.redhat.developers.msa.ola;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.HeaderParam;
 
+import lombok.extern.slf4j.Slf4j;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
@@ -37,26 +40,39 @@ import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class OlaController {
 
     @Autowired
     private HolaService holaService;
 
+    @Autowired
+    private AlohaService alohaService;
+
     @CrossOrigin
     @RequestMapping(method = RequestMethod.GET, value = "/ola", produces = "text/plain")
     @ApiOperation("Returns the greeting in Portuguese")
-    public String ola() {
+    public String ola(HttpServletRequest request) {
         String hostname = System.getenv().getOrDefault("HOSTNAME", "Unknown");
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()){
+            String headerName = headerNames.nextElement();
+            String headerValue = request.getHeader(headerName);
+            if(headerValue != null){
+              log.info("Header {} has value {} ",headerName,headerValue);
+            }
+        }
         return String.format("Olá de %s", hostname);
     }
 
     @CrossOrigin
     @RequestMapping(method = RequestMethod.GET, value = "/ola-chaining", produces = "application/json")
     @ApiOperation("Returns the greeting plus the next service in the chain")
-    public List<String> sayHelloChaining() {
+    public List<String> sayHelloChaining(HttpServletRequest request) {
         List<String> greetings = new ArrayList<>();
-        greetings.add(ola());
-        greetings.addAll(holaService.hola());
+        greetings.add(ola(request));
+        //greetings.addAll(holaService.hola()); // we dont have this deployed now hence will not enable it
+        greetings.addAll(alohaService.aloha()); // this triggers Aloha Chaining and propagate all headers
         return greetings;
     }
 
@@ -77,9 +93,5 @@ public class OlaController {
         return "Logged out";
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/health")
-    @ApiOperation("Used to verify the health of the service")
-    public String health() {
-        return "I'm ok";
-    }
+    //Removed specific endpoint for health as  spring-boot-actuator already exposes one
 }

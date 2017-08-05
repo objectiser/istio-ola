@@ -1,0 +1,76 @@
+:linkattrs:
+
+= Overview
+
+The configuration and code changes that are done to spring boot based _Ola_ application when deploying on to https://istio.io/[Istio] configured
+environment.
+
+NOTE: This application works only on Kubernetes Cluster as OpenShift does not yet support Istio
+
+== Pre-requisites
+
+* https://istio.io/[Istio] is configured and running in your environment
+* istioctl binary is available in local path where build will be executed
+
+== What becomes deprecated ?
+
+When deploying with Istio we might not need the explicit tracing related
+code to be added in the application business logic, the code just need to propogate
+the headers listed below as part of each request.  The Istio will take care of sending the
+spans/traces associated with the headers to Zipkin
+
+NOTE: Refer to the commented code in *TracingConfiguration* and *OlaController* for changes related to header propagation
+
+== What you need ?
+
+=== Tracing
+
+As mentioned in previous sections the following are the headers that needs to be propagated with
+each request that needs to be traced:
+
+- x-request-id
+- x-b3-traceid
+- x-b3-spanid
+- x-b3-parentspanid
+- x-b3-sampled
+- x-b3-flags
+- x-ot-span-context
+
+=== Circuit Breakers
+
+_*WIP*_
+
+
+== Build and Deploy
+
+[code,sh]
+----
+
+mvn clean package fabric8:build <1>
+
+mvn exec:exec <2>
+
+kubectl -f src/istio/istio-ola.yaml <3>
+
+----
+
+<1> build the application docker image
+<2> the _kube-inject_ i.e. injecting the Istio related init-containers and
+sidecars in to the kubernetes deployment yaml found in link:./src/istio/ola.yaml[ola.yaml]
+<3> Deploying application on to Kubernetes
+
+[NOTE]
+====
+you can find a istio kube-injected yaml in link:./src/istio/istio-ola.yaml[istio-ola.yaml]
+====
+
+== References
+
+- https://istio.io/[Istio]
+- https://istio.io/docs/tasks/integrating-services-into-istio.html[Integrating to Service Mesh]
+- https://istio.io/docs/tasks/zipkin-tracing.html[Distributed Tracing with Istio]
+
+
+
+
+

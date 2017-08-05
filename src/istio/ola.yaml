@@ -1,0 +1,40 @@
+##################################################################################################
+#  Ola
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ola
+  labels:
+    app: ola
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: ola
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ola
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ola
+        version: "0.0.1"
+    spec:
+      containers:
+      - env:
+        - name: JAVA_OPTIONS
+          value: -Xmx256m
+        - name: AB_OFF
+          value: ""
+        name:  spring-boot
+        image: ola:0.0.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
