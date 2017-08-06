@@ -24,6 +24,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.HeaderParam;
 
+import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
@@ -46,22 +47,27 @@ public class OlaController {
     @Autowired
     private HolaService holaService;
 
-    @Autowired
-    private AlohaService alohaService;
-
     @CrossOrigin
     @RequestMapping(method = RequestMethod.GET, value = "/ola", produces = "text/plain")
     @ApiOperation("Returns the greeting in Portuguese")
     public String ola(HttpServletRequest request) {
         String hostname = System.getenv().getOrDefault("HOSTNAME", "Unknown");
         Enumeration<String> headerNames = request.getHeaderNames();
+
+        StringBuffer headerMsg = new StringBuffer("{");
+
         while (headerNames.hasMoreElements()){
             String headerName = headerNames.nextElement();
             String headerValue = request.getHeader(headerName);
             if(headerValue != null){
-              log.info("Header {} has value {} ",headerName,headerValue);
+                headerMsg.append(String.format("{\"%s\":\"%s\"}",headerName,headerValue));
+                headerMsg.append(",");
             }
         }
+
+        headerMsg.append("}");
+
+        log.info("Request Headers:{}",headerMsg);
         return String.format("Olá de %s", hostname);
     }
 
@@ -71,8 +77,7 @@ public class OlaController {
     public List<String> sayHelloChaining(HttpServletRequest request) {
         List<String> greetings = new ArrayList<>();
         greetings.add(ola(request));
-        //greetings.addAll(holaService.hola()); // we dont have this deployed now hence will not enable it
-        greetings.addAll(alohaService.aloha()); // this triggers Aloha Chaining and propagate all headers
+        greetings.addAll(holaService.hola()); // we dont have this deployed now hence will not enable it
         return greetings;
     }
 

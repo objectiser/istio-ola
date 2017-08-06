@@ -86,19 +86,8 @@ public class TracingConfiguration {
                 .logger(new Logger.ErrorLogger()).logLevel(Logger.Level.BASIC)
                 .decoder(new JacksonDecoder())
                 .requestInterceptor(this::applyTracingHeaders) // extra tracing headers required to be propagated
-                .target(HolaService.class, "http://hola:8080/",
+                .target(HolaService.class, "http://istio-ingress/",
                         () -> Collections.singletonList("Hola response (fallback)"));
-    }
-
-    @Bean
-    public AlohaService alohaService() {
-
-        return HystrixFeign.builder()
-                .logger(new Logger.ErrorLogger()).logLevel(Logger.Level.BASIC)
-                .decoder(new JacksonDecoder())
-                .requestInterceptor(this::applyTracingHeaders) // extra tracing headers required to be propagated
-                .target(AlohaService.class, "http://istio-ingress/",
-                        () -> Collections.singletonList("Aloha response (fallback)"));
     }
 
     protected void applyTracingHeaders(RequestTemplate requestTemplate) {
