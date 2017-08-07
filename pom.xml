@@ -19,7 +19,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.redhat.developers.msa.ola</groupId>
-	<artifactId>ola</artifactId>
+	<artifactId>istio-ola</artifactId>
 	<version>0.0.1</version>
 	<packaging>jar</packaging>
 
@@ -168,6 +168,7 @@
         <version>${fabric8-maven-plugin.version}</version>
         <executions>
           <execution>
+            <phase>package</phase>
             <goals>
               <goal>build</goal>
             </goals>
@@ -180,6 +181,7 @@
         <version>1.6.0</version>
         <executions>
           <execution>
+            <phase>package</phase>
             <goals>
               <goal>exec</goal>
             </goals>
