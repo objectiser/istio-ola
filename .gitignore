@@ -1,4 +1,7 @@
-.*
+*.iml
 .idea
 target
-*.iml
+.DS_Store
+.project
+.classpath
+.settings
