@@ -99,7 +99,7 @@ All the files will be located in the *target* directory of the project
 [code,sh]
 ----
 
-kubectl apply -f /target/istio/isito-ola.yaml <1>
+kubectl apply -f target/istio/istio-ola.yaml <1>
 
 ----
 
