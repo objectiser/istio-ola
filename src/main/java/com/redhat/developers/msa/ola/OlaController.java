@@ -44,59 +44,76 @@ import io.swagger.annotations.ApiOperation;
 @Slf4j
 public class OlaController {
 
-    @Autowired
-    private HolaService holaService;
+  @Autowired
+  private HolaService holaService;
 
-    @CrossOrigin
-    @RequestMapping(method = RequestMethod.GET, value = "/ola", produces = "text/plain")
-    @ApiOperation("Returns the greeting in Portuguese")
-    public String ola(HttpServletRequest request) {
-        String hostname = System.getenv().getOrDefault("HOSTNAME", "Unknown");
-        Enumeration<String> headerNames = request.getHeaderNames();
+  @CrossOrigin
+  @RequestMapping(method = RequestMethod.GET, value = "/ola", produces = "text/plain")
+  @ApiOperation("Returns the greeting in Portuguese")
+  public String ola(HttpServletRequest request) {
+    String hostname = System.getenv().getOrDefault("HOSTNAME", "Unknown");
+    Enumeration<String> headerNames = request.getHeaderNames();
 
-        StringBuffer headerMsg = new StringBuffer("{");
+    StringBuffer headerMsg = new StringBuffer("{");
 
-        while (headerNames.hasMoreElements()){
-            String headerName = headerNames.nextElement();
-            String headerValue = request.getHeader(headerName);
-            if(headerValue != null){
-                headerMsg.append(String.format("{\"%s\":\"%s\"}",headerName,headerValue));
-                headerMsg.append(",");
-            }
-        }
-
-        headerMsg.append("}");
-
-        log.info("Request Headers:{}",headerMsg);
-        return String.format("Olá de %s", hostname);
+    while (headerNames.hasMoreElements()) {
+      String headerName = headerNames.nextElement();
+      String headerValue = request.getHeader(headerName);
+      if (headerValue != null) {
+        headerMsg.append(String.format("{\"%s\":\"%s\"}", headerName, headerValue));
+        headerMsg.append(",");
+      }
     }
 
-    @CrossOrigin
-    @RequestMapping(method = RequestMethod.GET, value = "/ola-chaining", produces = "application/json")
-    @ApiOperation("Returns the greeting plus the next service in the chain")
-    public List<String> sayHelloChaining(HttpServletRequest request) {
-        List<String> greetings = new ArrayList<>();
-        greetings.add(ola(request));
-        greetings.addAll(holaService.hola()); // we dont have this deployed now hence will not enable it
-        return greetings;
+    headerMsg.append("}");
+
+    log.info("Request Headers:{}", headerMsg);
+    return String.format("Olá de %s", hostname);
+  }
+
+  @CrossOrigin
+  @RequestMapping(method = RequestMethod.GET, value = "/ola-chaining", produces = "application/json")
+  @ApiOperation("Returns the greeting plus the next service in the chain")
+  public List<String> sayHelloChaining(HttpServletRequest request) {
+    List<String> greetings = new ArrayList<>();
+    greetings.add(ola(request));
+    greetings.addAll(holaService.hola()); // we dont have this deployed now hence will not enable it
+    return greetings;
+  }
+
+  @CrossOrigin
+  @RequestMapping(method = RequestMethod.GET, value = "/ola-secured", produces = "text/plain")
+  @ApiOperation("Returns a message that is only available for authenticated users")
+  public String olaSecured(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
+    AccessToken token = principal.getKeycloakSecurityContext().getToken();
+    return "This is a Secured resource. You are logged as " + token.getName();
+  }
+
+  @CrossOrigin
+  @RequestMapping(method = RequestMethod.GET, value = "/ola-long", produces = "application/json")
+  @ApiOperation("Returns the greeting plus the next service in the chain")
+  public String longOla() {
+
+    log.info("Long Hello Started ...");
+
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
     }
 
-    @CrossOrigin
-    @RequestMapping(method = RequestMethod.GET, value = "/ola-secured", produces = "text/plain")
-    @ApiOperation("Returns a message that is only available for authenticated users")
-    public String olaSecured(KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal) {
-        AccessToken token = principal.getKeycloakSecurityContext().getToken();
-        return "This is a Secured resource. You are logged as " + token.getName();
-    }
+    log.info("Long Hello Ended ...");
 
-    @CrossOrigin
-    @RequestMapping(method = RequestMethod.GET, value = "/logout", produces = "text/plain")
-    @ApiOperation("Logout")
-    public String logout() throws ServletException {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
-        request.logout();
-        return "Logged out";
-    }
+    return String.format("Long ola from %s", System.getenv().getOrDefault("HOSTNAME", "Unknown"));
+  }
 
-    //Removed specific endpoint for health as  spring-boot-actuator already exposes one
+  @CrossOrigin
+  @RequestMapping(method = RequestMethod.GET, value = "/logout", produces = "text/plain")
+  @ApiOperation("Logout")
+  public String logout() throws ServletException {
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+    request.logout();
+    return "Logged out";
+  }
+
+  //Removed specific endpoint for health as  spring-boot-actuator already exposes one
 }

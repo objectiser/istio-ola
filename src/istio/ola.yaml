@@ -1,40 +1,52 @@
 ##################################################################################################
-#  Ola
+#  @project.artifactId@
 ##################################################################################################
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: istio-ola
+  name: "@project.artifactId@"
   labels:
-    app: istio-ola
+    app: "@project.artifactId@"
 spec:
   ports:
   - port: 8080
     name: http
   selector:
-    app: istio-ola
+    app: "@project.artifactId@"
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: istio-ola
+  name: "@project.artifactId@"
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: istio-ola
-        version: "0.0.1"
+        app: "@project.artifactId@"
+        version: "@project.version@"
     spec:
       containers:
       - env:
         - name: JAVA_OPTIONS
-          value: -Xmx256m
+          value: -Xmx64m -Xss128m
         - name: AB_OFF
           value: ""
         name:  spring-boot
-        image: istio-ola:0.0.1
+        image: "@project.artifactId@:@project.version@"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
