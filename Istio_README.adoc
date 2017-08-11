@@ -38,31 +38,127 @@ each request that needs to be traced:
 
 === Circuit Breakers
 
-_*WIP*_
+To enable circuit breakers we need to create Istio https://istio.io/docs/reference/config/traffic-rules/routing-rules.html[route-rule] and
+https://istio.io/docs/reference/config/traffic-rules/destination-policies.html[destination-policy]
 
+For this demo we will create the following route-rule and destination-policy
+
+[code,yaml]
+----
+
+---
+type: route-rule
+name: ola-default-route
+spec:
+  destination: ola.default.svc.cluster.local
+  precedence: 1
+  route:
+  - tags:
+      version: "0.0.2" <1>
+    weight: 100
+
+---
+type: destination-policy
+name: ola-default-cb
+spec:
+  destination: ola.default.svc.cluster.local
+  policy:
+  - tags:
+      version: "0.0.2" <1>
+    circuitBreaker:
+      simpleCb:
+        maxConnections: 1 <2>
+        httpMaxRequestsPerConnection: 1 <3>
+        sleepWindow: 30s <4>
+        httpDetectionInterval: 1m <5>
+----
+
+<1> the Kubernetes deployment tag that will be used to identify the backend service version
+and we apply the destination policy to the same version
+<2> maximum number of allowed connections, kept it small for demo
+<3> how many requests are allowed per connection, in this demo we allow only request per connection
+i.e. keep-alive is *off*
+<4> circuit breaker open window time
+<5> time interval to check the status of circuit
 
 == Build and Deploy
+
+[[build]]
+=== Build
+[code,sh]
+----
+./mvnw clean install
+----
+
+[[deploy]]
+=== Deploy
+
+The build above should create the required kubernetes manifests that allows to deploy the service in Istio Service Mesh.
+All the files will be located in the *target* directory of the project
 
 [code,sh]
 ----
 
-mvn clean package fabric8:build <1>
-
-mvn exec:exec <2>
-
-kubectl -f src/istio/istio-ola.yaml <3>
+kubectl apply -f /target/istio/isito-ola.yaml <1>
 
 ----
 
-<1> build the application docker image
-<2> the _kube-inject_ i.e. injecting the Istio related init-containers and
-sidecars in to the kubernetes deployment yaml found in link:./src/istio/ola.yaml[ola.yaml]
-<3> Deploying application on to Kubernetes
+<1> Deploy the istio-httpbin in to kubernetes cluster and create the _istio-httpbin_ service
+[test]]
+== Testing
 
-[NOTE]
-====
-you can find a istio kube-injected yaml in link:./src/istio/istio-ola.yaml[istio-ola.yaml]
-====
+Since the destination policy has defined the Circuit Breaker, the application should return the client
+with errors post 2 requests which means 90% failure for concurrent requests of 20 users.
+
+The application url can be found using the command `echo $(minikube ip):$(kubectl get svc istio-ingress -o jsonpath='{.spec.ports[0].nodePort}')/httbin/delay`
+
+To test application with concurrency you can using tools like http://gatling.io/[Gatling], the following load test script
+could be used with gatling
+
+[code,scala]
+----
+
+import scala.concurrent.duration._
+
+import io.gatling.core.Predef._
+import io.gatling.http.Predef._
+import io.gatling.jdbc.Predef._
+
+class OlaServiceSimulation extends Simulation {
+
+	val httpProtocol = http
+		.baseURL("http://192.168.99.100:30420") <1>
+		.inferHtmlResources()
+		.acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		.acceptEncodingHeader("gzip, deflate")
+		.acceptLanguageHeader("en-US,en;q=0.5")
+		.userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:52.0) Gecko/20100101 Firefox/52.0")
+
+	val headers_0 = Map("Upgrade-Insecure-Requests" -> "1")
+
+    val uri1 = "http://192.168.99.100:30420/api/ola-long" <1>
+
+	val scn = scenario("OlaServiceSimulation")
+		.exec(http("request_0")
+			.get("/api/ola-long")
+			.headers(headers_0))
+
+	setUp(scn.inject(atOnceUsers(20))).protocols(httpProtocol)
+}
+
+----
+
+<1> replace it with Kubernetes cluster IP and isito-ingress node port
+
+=== Executing Test Simulations
+
+By default the gatling tests are disabled, they can be enabled passing `-Dskip.gatlingTest=false`
+system property to the maven command as shown below,
+
+[code,sh]
+----
+./mvnw -Dskip.gatlingTests=false gatling:integration-test
+----
 
 == References
 

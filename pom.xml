@@ -60,6 +60,8 @@
     <!-- The docker image name -->
     <fabric8.generator.name>${project.artifactId}:${project.version}</fabric8.generator.name>
 
+    <skip.gatlingTests>true</skip.gatlingTests>
+
   </properties>
 
   <dependencies>
@@ -140,6 +142,14 @@
       <artifactId>springfox-swagger-ui</artifactId>
       <version>${springfox.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>io.gatling.highcharts</groupId>
+      <artifactId>gatling-charts-highcharts</artifactId>
+      <version>2.2.5</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -209,6 +219,24 @@
                 </resource>
               </resources>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Gatling Performance Test-->
+      <plugin>
+        <groupId>io.gatling</groupId>
+        <artifactId>gatling-maven-plugin</artifactId>
+        <version>2.2.4</version>
+        <configuration>
+          <runMultipleSimulations>false</runMultipleSimulations>
+          <skip>${skip.gatlingTests}</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
